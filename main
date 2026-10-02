@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Championship Tournament Manager</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .timer-glow {
+            text-shadow: 0 0 25px rgba(99, 102, 241, 0.6);
+        }
+        .timer-warning {
+            text-shadow: 0 0 30px rgba(239, 68, 68, 0.9);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Header & Navigation -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-6 py-5">
+        <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-5">
+            
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-violet-500 flex items-center justify-center shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid fa-trophy text-white text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-black text-3xl md:text-4xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+                        Scoreboard
+                    </h1>
+                </div>
+            </div>
+
+            <!-- Tab Switcher Navigation -->
+            <div class="flex items-center bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
+                <button id="tab-btn-match" onclick="switchTab('match')" class="px-7 py-3.5 rounded-xl font-extrabold text-lg transition flex items-center gap-3 bg-brand-600 text-white shadow-md">
+                    <i class="fa-solid fa-gamepad text-xl"></i>
+                    <span>Match Manager</span>
+                </button>
+                <button id="tab-btn-standings" onclick="switchTab('standings')" class="px-7 py-3.5 rounded-xl font-extrabold text-lg transition flex items-center gap-3 text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-list-ol text-xl"></i>
+                    <span>Standings & Results</span>
+                </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-3">
+                <button id="btn-edit-teams" class="px-5 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-base border border-slate-700 transition flex items-center gap-2.5">
+                    <i class="fa-solid fa-pen-to-square text-brand-400 text-lg"></i>
+                    <span>Teams</span>
+                </button>
+                <button id="btn-export-results" class="px-5 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-base border border-slate-700 transition flex items-center gap-2.5">
+                    <i class="fa-solid fa-file-export text-emerald-400 text-lg"></i>
+                    <span>Export Results</span>
+                </button>
+                <button id="btn-open-reset-modal" class="px-5 py-3.5 rounded-xl bg-red-950/50 hover:bg-red-900/70 text-red-200 font-bold text-base border border-red-800/60 transition flex items-center gap-2.5">
+                    <i class="fa-solid fa-rotate-right text-lg"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 md:p-6 lg:p-8">
+
+        <!-- TAB 1: MATCH MANAGER -->
+        <div id="tab-content-match" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: Match Schedule -->
+            <div class="lg:col-span-5 xl:col-span-4 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                        <h2 class="font-display text-2xl font-black text-white flex items-center gap-2.5">
+                            <i class="fa-solid fa-calendar-days text-brand-500"></i>
+                            <span>Schedule</span>
+                        </h2>
+                        <span class="text-sm font-bold text-slate-300 bg-slate-800 px-3.5 py-1.5 rounded-full border border-slate-700 whitespace-nowrap">
+                            Select Match
+                        </span>
+                    </div>
+
+                    <!-- Match Schedule List Container -->
+                    <div class="space-y-6 max-h-[700px] overflow-y-auto pr-1">
+                        <!-- Group A Priority Matches -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-black text-brand-400 uppercase tracking-wider flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-brand-500 inline-block"></span> Group A Matches
+                                </span>
+                            </div>
+                            <div id="schedule-group-a" class="space-y-2.5">
+                                <!-- Group A Matches dynamically inserted -->
+                            </div>
+                        </div>
+
+                        <!-- Group B Matches -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-black text-violet-400 uppercase tracking-wider flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-violet-500 inline-block"></span> Group B Matches
+                                </span>
+                            </div>
+                            <div id="schedule-group-b" class="space-y-2.5">
+                                <!-- Group B Matches dynamically inserted -->
+                            </div>
+                        </div>
+
+                        <!-- Sudden Death Tiebreakers -->
+                        <div id="schedule-tiebreakers-container" class="space-y-3 hidden">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-black text-red-400 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-fire text-red-500 text-base"></i> Sudden Death Tiebreakers
+                                </span>
+                                <span class="text-xs text-red-300 font-black uppercase bg-red-950/80 px-2.5 py-1 rounded border border-red-800/80">Stage 2</span>
+                            </div>
+                            <div id="schedule-tiebreakers" class="space-y-2.5">
+                                <!-- Dynamic Tiebreaker matches -->
+                            </div>
+                        </div>
+
+                        <!-- Playoff Matches -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-trophy text-amber-400 text-base"></i> Final Playoffs
+                                </span>
+                                <span class="text-xs text-slate-400 font-bold">Stage 3</span>
+                            </div>
+                            <div id="schedule-playoffs" class="space-y-2.5">
+                                <!-- Playoff Matches dynamically inserted -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Match Manager Screen -->
+            <div class="lg:col-span-7 xl:col-span-8 space-y-6">
+                <section class="bg-gradient-to-b from-slate-900 to-slate-900/90 rounded-3xl border border-slate-800 p-6 md:p-8 shadow-2xl relative overflow-hidden">
+                    
+                    <!-- Decorative ambient lights -->
+                    <div class="absolute -top-12 -right-12 w-80 h-80 bg-brand-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -bottom-12 -left-12 w-80 h-80 bg-violet-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div class="relative z-10 space-y-8">
+                        
+                        <!-- Header Bar -->
+                        <div class="flex flex-wrap sm:flex-nowrap items-center justify-between border-b border-slate-800/80 pb-4 gap-3">
+                            <div class="flex items-center gap-3">
+                                <span id="arena-match-phase" class="px-4 py-2 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 text-xs md:text-sm font-black uppercase tracking-wider whitespace-nowrap shrink-0">
+                                    GROUP A MATCH
+                                </span>
+                                <span id="arena-match-id" class="text-slate-200 font-black text-lg md:text-xl whitespace-nowrap">Match #1</span>
+                            </div>
+                            <div id="arena-rules-badge" class="text-xs md:text-sm font-bold text-amber-300 bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/30 flex items-center gap-2 whitespace-nowrap">
+                                <i class="fa-solid fa-star text-amber-400 text-base"></i>
+                                <span>2-0 Double Win = +3 Extra Bonus Points</span>
+                            </div>
+                        </div>
+
+                        <!-- Match Display & Scoreboard -->
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                            
+                            <!-- Team 1 Card -->
+                            <div class="lg:col-span-4 bg-slate-950/80 border border-slate-800 rounded-2xl p-6 text-center space-y-3 relative shadow-inner">
+                                <div id="team1-winner-tag" class="hidden absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-950 text-xs font-black px-4 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                                    Match Winner
+                                </div>
+                                <span id="team1-group-label" class="text-sm font-extrabold text-brand-400 uppercase tracking-widest block">Group A</span>
+                                <h2 id="team1-name" class="font-display text-3xl md:text-4xl font-black text-white tracking-wide truncate">Group 1</h2>
+                            </div>
+
+                            <!-- Timer Hub -->
+                            <div class="lg:col-span-4 flex flex-col items-center justify-center space-y-4 py-2">
+                                <div class="relative flex flex-col items-center justify-center bg-slate-950 rounded-2xl border-2 border-slate-800 p-6 w-full shadow-inner">
+                                    <span class="text-sm font-extrabold uppercase tracking-widest text-slate-300 mb-1">60s Round Timer</span>
+                                    <div id="timer-display" class="font-display text-8xl font-black tracking-tight text-brand-500 timer-glow transition-all duration-300">
+                                        60
+                                    </div>
+                                    <span class="text-sm text-slate-300 font-bold mt-1">Seconds</span>
+
+                                    <!-- Progress Bar -->
+                                    <div class="w-full bg-slate-800 h-3 rounded-full mt-4 overflow-hidden">
+                                        <div id="timer-bar" class="bg-brand-500 h-full w-full transition-all duration-100 ease-linear"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Timer Controls -->
+                                <div class="flex items-center gap-2.5 w-full justify-center">
+                                    <button id="btn-timer-start" class="flex-1 py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-base shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-play text-lg"></i>
+                                        <span>Start</span>
+                                    </button>
+                                    <button id="btn-timer-pause" class="flex-1 py-3.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-base shadow-lg shadow-amber-600/20 transition flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-pause text-lg"></i>
+                                        <span>Pause</span>
+                                    </button>
+                                    <button id="btn-timer-reset" class="py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-base border border-slate-700 transition flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-rotate-left text-lg"></i>
+                                        <span>Reset</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Team 2 Card -->
+                            <div class="lg:col-span-4 bg-slate-950/80 border border-slate-800 rounded-2xl p-6 text-center space-y-3 relative shadow-inner">
+                                <div id="team2-winner-tag" class="hidden absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-950 text-xs font-black px-4 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                                    Match Winner
+                                </div>
+                                <span id="team2-group-label" class="text-sm font-extrabold text-violet-400 uppercase tracking-widest block">Group A</span>
+                                <h2 id="team2-name" class="font-display text-3xl md:text-4xl font-black text-white tracking-wide truncate">Group 2</h2>
+                            </div>
+
+                        </div>
+
+                        <!-- Round Results Entry Container -->
+                        <div class="space-y-4 pt-4 border-t border-slate-800">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <h3 class="text-lg md:text-xl font-black uppercase tracking-wider text-white flex items-center gap-2.5">
+                                    <i class="fa-solid fa-pen-ruler text-brand-500"></i>
+                                    <span>Round Results Entry</span>
+                                </h3>
+                                <span id="match-status-banner" class="self-start sm:self-auto text-sm font-black text-indigo-300 bg-indigo-500/10 px-4 py-2 rounded-xl border border-indigo-500/20">
+                                    In Progress
+                                </span>
+                            </div>
+
+                            <div id="rounds-container" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <!-- Round Cards generated dynamically -->
+                            </div>
+
+                            <!-- Playoff Optional 4th Match Button -->
+                            <div id="optional-round-container" class="hidden pt-4 flex flex-col items-center gap-2">
+                                <button id="btn-add-4th-round" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-base uppercase tracking-wider shadow-xl shadow-amber-500/20 transition transform hover:scale-[1.02] active:scale-95 flex items-center gap-3">
+                                    <i class="fa-solid fa-circle-plus text-2xl"></i>
+                                    <span>+ Add 4th Optional Match (Tiebreaker)</span>
+                                </button>
+                                <p class="text-sm text-amber-300/90 font-bold">Use this optional 4th match/round to break ties in Final Playoff games.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: STANDINGS AND RESULTS -->
+        <div id="tab-content-standings" class="hidden space-y-10">
+            
+            <!-- Group Stage Tables Section -->
+            <section class="space-y-6">
+                <div>
+                    <h2 class="font-display text-3xl md:text-4xl font-black text-white tracking-tight">GROUP STAGE STANDINGS</h2>
+                    <p class="text-base text-slate-300 font-semibold mt-1">First 2-0 consecutive win grants +3 extra bonus points. Edit Bonus or Pts fields directly to override standings manually.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- Group A Table Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                            <div class="flex items-center gap-3">
+                                <span class="w-4 h-4 rounded-full bg-brand-500 inline-block shadow-sm shadow-brand-500"></span>
+                                <h3 class="font-display font-extrabold text-2xl md:text-3xl text-white">Group A Standings</h3>
+                            </div>
+                            <span class="text-sm font-bold text-slate-300 bg-slate-800 px-3.5 py-1.5 rounded-lg border border-slate-700">Group 1, 2, 3</span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-base md:text-lg">
+                                <thead>
+                                    <tr class="text-xs md:text-sm font-black text-slate-400 uppercase border-b border-slate-800">
+                                        <th class="pb-3 pl-2">Pos</th>
+                                        <th class="pb-3">Team</th>
+                                        <th class="pb-3 text-center">MP</th>
+                                        <th class="pb-3 text-center">W</th>
+                                        <th class="pb-3 text-center">D</th>
+                                        <th class="pb-3 text-center">L</th>
+                                        <th class="pb-3 text-center">Bonus</th>
+                                        <th class="pb-3 text-right pr-2">Pts</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="group-a-table" class="divide-y divide-slate-800/60 font-semibold">
+                                    <!-- Rows populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Group B Table Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                            <div class="flex items-center gap-3">
+                                <span class="w-4 h-4 rounded-full bg-violet-500 inline-block shadow-sm shadow-violet-500"></span>
+                                <h3 class="font-display font-extrabold text-2xl md:text-3xl text-white">Group B Standings</h3>
+                            </div>
+                            <span class="text-sm font-bold text-slate-300 bg-slate-800 px-3.5 py-1.5 rounded-lg border border-slate-700">Group 4, 5, 6</span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-base md:text-lg">
+                                <thead>
+                                    <tr class="text-xs md:text-sm font-black text-slate-400 uppercase border-b border-slate-800">
+                                        <th class="pb-3 pl-2">Pos</th>
+                                        <th class="pb-3">Team</th>
+                                        <th class="pb-3 text-center">MP</th>
+                                        <th class="pb-3 text-center">W</th>
+                                        <th class="pb-3 text-center">D</th>
+                                        <th class="pb-3 text-center">L</th>
+                                        <th class="pb-3 text-center">Bonus</th>
+                                        <th class="pb-3 text-right pr-2">Pts</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="group-b-table" class="divide-y divide-slate-800/60 font-semibold">
+                                    <!-- Rows populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Sudden Death Tiebreaker Stage Section -->
+            <section id="standings-tiebreaker-section" class="hidden space-y-6 pt-4 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center font-bold text-lg shadow-lg shadow-red-500/10">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-display text-3xl font-black text-white tracking-tight">SUDDEN DEATH TIEBREAKER STAGE</h2>
+                        <p class="text-sm text-slate-400 font-medium mt-0.5">Required single-match tiebreakers to determine group rankings before advancing to Final Playoffs.</p>
+                    </div>
+                </div>
+
+                <div id="standings-tiebreaker-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Cards generated dynamically -->
+                </div>
+            </section>
+
+            <!-- Final Playoffs Section -->
+            <section class="space-y-6 pt-4 border-t border-slate-800">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-display text-3xl font-black text-white tracking-tight">FINAL PLAYOFFS</h2>
+                        <p class="text-sm text-slate-400 font-medium mt-1">Automatic placement based on group rankings or manual team selection • No bonus points in playoffs</p>
+                    </div>
+                    <div id="playoffs-unlocked-badge" class="self-start md:self-auto text-xs font-extrabold px-4 py-2 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                        Pending Group Stage Completion
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    
+                    <!-- Championship Final Card -->
+                    <div class="bg-gradient-to-b from-amber-950/40 to-slate-900 border border-amber-500/30 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-crown text-amber-400 text-sm"></i> Championship Final
+                                </span>
+                                <span class="text-xs font-bold text-slate-400">1st A vs 1st B</span>
+                            </div>
+                            <div id="playoff-card-final" class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+                        <button id="btn-load-final" disabled onclick="loadAndSwitchMatch('final')" class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black text-sm uppercase tracking-wider transition">
+                            Manage Championship Match
+                        </button>
+                    </div>
+
+                    <!-- 3rd Place Match Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black uppercase text-slate-300 tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-medal text-slate-300 text-sm"></i> 3rd Place Playoff
+                                </span>
+                                <span class="text-xs font-bold text-slate-400">2nd A vs 2nd B</span>
+                            </div>
+                            <div id="playoff-card-3rd" class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+                        <button id="btn-load-3rd" disabled onclick="loadAndSwitchMatch('place3')" class="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-sm uppercase tracking-wider border border-slate-700 transition">
+                            Manage 3rd Place Match
+                        </button>
+                    </div>
+
+                    <!-- 5th Place Match Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black uppercase text-amber-700 tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-award text-amber-700 text-sm"></i> 5th Place Playoff
+                                </span>
+                                <span class="text-xs font-bold text-slate-400">3rd A vs 3rd B</span>
+                            </div>
+                            <div id="playoff-card-5th" class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+                        <button id="btn-load-5th" disabled onclick="loadAndSwitchMatch('place5')" class="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-sm uppercase tracking-wider border border-slate-700 transition">
+                            Manage 5th Place Match
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- EDIT TEAMS MODAL -->
+    <div id="modal-teams" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 md:p-8 space-y-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 class="font-display font-extrabold text-2xl text-white">Edit Team Names</h3>
+                <button id="btn-close-modal" class="text-slate-400 hover:text-white p-2 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 max-h-80 overflow-y-auto pr-1">
+                <div class="space-y-3">
+                    <span class="text-xs font-bold text-brand-400 uppercase tracking-wider">Group A Teams</span>
+                    <div class="space-y-2">
+                        <input id="input-team-1" type="text" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-brand-500 text-sm font-semibold" placeholder="Group 1 Name">
+                        <input id="input-team-2" type="text" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-brand-500 text-sm font-semibold" placeholder="Group 2 Name">
+                        <input id="input-team-3" type="text" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-brand-500 text-sm font-semibold" placeholder="Group 3 Name">
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-2">
+                    <span class="text-xs font-bold text-violet-400 uppercase tracking-wider">Group B Teams</span>
+                    <div class="space-y-2">
+                        <input id="input-team-4" type="text" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-brand-500 text-sm font-semibold" placeholder="Group 4 Name">
+                        <input id="input-team-5" type="text" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-brand-500 text-sm font-semibold" placeholder="Group 5 Name">
+                        <input id="input-team-6" type="text" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-brand-500 text-sm font-semibold" placeholder="Group 6 Name">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button id="btn-save-teams" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm transition shadow-lg shadow-brand-600/30">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEAM MATCH HISTORY MODAL -->
+    <div id="modal-team-history" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 md:p-8 space-y-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-600/20 text-brand-400 border border-brand-500/30 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h3 id="history-team-name" class="font-display font-extrabold text-2xl text-white">Team Name</h3>
+                        <p id="history-team-group" class="text-xs font-semibold text-slate-400">Group Stage Match History</p>
+                    </div>
+                </div>
+                <button id="btn-close-history-modal" class="text-slate-400 hover:text-white p-2 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Team Summary Stats -->
+            <div class="grid grid-cols-4 gap-3 text-center bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                <div>
+                    <span class="block text-[11px] font-bold text-slate-400 uppercase">Played</span>
+                    <span id="history-stat-mp" class="font-display font-bold text-lg text-white">0</span>
+                </div>
+                <div>
+                    <span class="block text-[11px] font-bold text-slate-400 uppercase">W - D - L</span>
+                    <span id="history-stat-wdl" class="font-display font-bold text-lg text-slate-200">0-0-0</span>
+                </div>
+                <div>
+                    <span class="block text-[11px] font-bold text-slate-400 uppercase">Bonus</span>
+                    <span id="history-stat-bonus" class="font-display font-bold text-lg text-indigo-400">+0</span>
+                </div>
+                <div>
+                    <span class="block text-[11px] font-bold text-slate-400 uppercase">Points</span>
+                    <span id="history-stat-pts" class="font-display font-black text-xl text-brand-400">0</span>
+                </div>
+            </div>
+
+            <!-- Matches Breakdown List -->
+            <div class="space-y-3">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider">Matches List</h4>
+                <div id="history-matches-list" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                    <!-- Dynamic history rows -->
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-slate-800">
+                <button id="btn-dismiss-history" class="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESET CONFIRMATION MODAL -->
+    <div id="modal-reset" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl text-center">
+            <div class="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="font-display font-extrabold text-2xl text-white">Reset Tournament?</h3>
+                <p class="text-sm text-slate-400">All round scores, matches, manual points, and standings will be completely reset.</p>
+            </div>
+            <div class="flex items-center justify-center gap-4 pt-2">
+                <button id="btn-cancel-reset" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition">
+                    Cancel
+                </button>
+                <button id="btn-confirm-reset" class="px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition shadow-lg shadow-red-600/30">
+                    Yes, Reset All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // State & Initial Data
+        const teams = {
+            1: { id: 1, name: 'Group 1', group: 'A' },
+            2: { id: 2, name: 'Group 2', group: 'A' },
+            3: { id: 3, name: 'Group 3', group: 'A' },
+            4: { id: 4, name: 'Group 4', group: 'B' },
+            5: { id: 5, name: 'Group 5', group: 'B' },
+            6: { id: 6, name: 'Group 6', group: 'B' },
+        };
+
+        const groupMatches = [
+            // Group A (Priority order: 1, 2, 3)
+            { id: 1, group: 'A', team1Id: 1, team2Id: 2, sets: [], maxSets: 3, isFinished: false, winnerId: null },
+            { id: 2, group: 'A', team1Id: 1, team2Id: 3, sets: [], maxSets: 3, isFinished: false, winnerId: null },
+            { id: 3, group: 'A', team1Id: 2, team2Id: 3, sets: [], maxSets: 3, isFinished: false, winnerId: null },
+            // Group B
+            { id: 4, group: 'B', team1Id: 4, team2Id: 5, sets: [], maxSets: 3, isFinished: false, winnerId: null },
+            { id: 5, group: 'B', team1Id: 4, team2Id: 6, sets: [], maxSets: 3, isFinished: false, winnerId: null },
+            { id: 6, group: 'B', team1Id: 5, team2Id: 6, sets: [], maxSets: 3, isFinished: false, winnerId: null },
+        ];
+
+        let tiebreakerMatches = [];
+
+        const playoffMatches = {
+            final: { id: 'final', name: 'Championship Final', team1Id: 1, team2Id: 4, sets: [], maxSets: 3, isFinished: false, winnerId: null, isManual: false },
+            place3: { id: 'place3', name: '3rd Place Playoff', team1Id: 2, team2Id: 5, sets: [], maxSets: 3, isFinished: false, winnerId: null, isManual: false },
+            place5: { id: 'place5', name: '5th Place Playoff', team1Id: 3, team2Id: 6, sets: [], maxSets: 3, isFinished: false, winnerId: null, isManual: false }
+        };
+
+        let manualPoints = {};
+        let manualBonus = {};
+
+        let currentActiveMatch = null;
+        let groupAStandings = [];
+        let groupBStandings = [];
+
+        // Timer State
+        let timerValue = 60;
+        let timerInterval = null;
+        let isTimerRunning = false;
+
+        function getTeam(id) {
+            return teams[id] || { id: 0, name: 'TBD', group: '-' };
+        }
+
+        function switchTab(tab) {
+            const matchTab = document.getElementById('tab-content-match');
+            const standingsTab = document.getElementById('tab-content-standings');
+            const btnMatch = document.getElementById('tab-btn-match');
+            const btnStandings = document.getElementById('tab-btn-standings');
+
+            if (tab === 'match') {
+                matchTab.classList.remove('hidden');
+                standingsTab.classList.add('hidden');
+                btnMatch.className = "px-7 py-3.5 rounded-xl font-extrabold text-lg transition flex items-center gap-3 bg-brand-600 text-white shadow-md";
+                btnStandings.className = "px-7 py-3.5 rounded-xl font-extrabold text-lg transition flex items-center gap-3 text-slate-300 hover:text-white";
+            } else {
+                matchTab.classList.add('hidden');
+                standingsTab.classList.remove('hidden');
+                btnStandings.className = "px-7 py-3.5 rounded-xl font-extrabold text-lg transition flex items-center gap-3 bg-brand-600 text-white shadow-md";
+                btnMatch.className = "px-7 py-3.5 rounded-xl font-extrabold text-lg transition flex items-center gap-3 text-slate-300 hover:text-white";
+            }
+        }
+
+        function selectMatch(matchId) {
+            let found = groupMatches.find(m => m.id == matchId);
+            if (!found) found = tiebreakerMatches.find(m => m.id == matchId);
+            if (!found) found = playoffMatches[matchId];
+
+            if (found) {
+                currentActiveMatch = found;
+                resetTimer();
+                renderAll();
+            }
+        }
+
+        function loadAndSwitchMatch(matchId) {
+            selectMatch(matchId);
+            switchTab('match');
+        }
+
+        function startTimer() {
+            if (isTimerRunning) return;
+            isTimerRunning = true;
+            timerInterval = setInterval(() => {
+                if (timerValue > 0) {
+                    timerValue--;
+                    updateTimerDisplay();
+                } else {
+                    pauseTimer();
+                    playTimerBeep();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            isTimerRunning = false;
+            if (timerInterval) clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timerValue = 60;
+            updateTimerDisplay();
+        }
+
+        function playTimerBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.8);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.8);
+            } catch (e) {
+                // Audio context error fallback
+            }
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timer-display');
+            const bar = document.getElementById('timer-bar');
+            if (display) {
+                display.innerText = timerValue;
+                if (timerValue <= 10) {
+                    display.classList.add('text-red-500', 'timer-warning');
+                    display.classList.remove('text-brand-500', 'timer-glow');
+                } else {
+                    display.classList.remove('text-red-500', 'timer-warning');
+                    display.classList.add('text-brand-500', 'timer-glow');
+                }
+            }
+            if (bar) {
+                const percent = (timerValue / 60) * 100;
+                bar.style.width = `${percent}%`;
+            }
+        }
+
+        function calculateStandings() {
+            const stats = {};
+            [1, 2, 3, 4, 5, 6].forEach(id => {
+                stats[id] = { id, name: teams[id].name, group: teams[id].group, mp: 0, w: 0, d: 0, l: 0, bonusPts: 0, pts: 0 };
+            });
+
+            groupMatches.forEach(m => {
+                if (!m.isFinished) return;
+                if (!stats[m.team1Id] || !stats[m.team2Id]) return;
+
+                stats[m.team1Id].mp++;
+                stats[m.team2Id].mp++;
+
+                if (m.winnerId === m.team1Id) {
+                    stats[m.team1Id].w++;
+                    stats[m.team1Id].pts += 3;
+                    stats[m.team2Id].l++;
+
+                    // Check 2-0 consecutive win bonus
+                    if (m.sets[0]?.result === 'team1' && m.sets[1]?.result === 'team1') {
+                        stats[m.team1Id].bonusPts += 3;
+                        stats[m.team1Id].pts += 3;
+                    }
+                } else if (m.winnerId === m.team2Id) {
+                    stats[m.team2Id].w++;
+                    stats[m.team2Id].pts += 3;
+                    stats[m.team1Id].l++;
+
+                    // Check 2-0 consecutive win bonus
+                    if (m.sets[0]?.result === 'team2' && m.sets[1]?.result === 'team2') {
+                        stats[m.team2Id].bonusPts += 3;
+                        stats[m.team2Id].pts += 3;
+                    }
+                } else {
+                    // Draw
+                    stats[m.team1Id].d++;
+                    stats[m.team1Id].pts += 1;
+                    stats[m.team2Id].d++;
+                    stats[m.team2Id].pts += 1;
+                }
+            });
+
+            // Sudden Death tiebreaker scoring (+0.5 pts & +0.5 bonus)
+            tiebreakerMatches.forEach(m => {
+                if (!m.isFinished) return;
+                if (m.winnerId && stats[m.winnerId]) {
+                    stats[m.winnerId].pts += 0.5;
+                    stats[m.winnerId].bonusPts += 0.5;
+                }
+            });
+
+            // Apply manual point/bonus overrides if present
+            [1, 2, 3, 4, 5, 6].forEach(id => {
+                if (manualBonus[id] !== undefined && manualBonus[id] !== null) {
+                    stats[id].bonusPts = manualBonus[id];
+                }
+                if (manualPoints[id] !== undefined && manualPoints[id] !== null) {
+                    stats[id].pts = manualPoints[id];
+                }
+            });
+
+            // Store base group stage points before tiebreakers
+            const basePts = {};
+            [1, 2, 3, 4, 5, 6].forEach(id => {
+                basePts[id] = stats[id].pts;
+            });
+
+            // Check tiebreakers based on group stage base points
+            checkTiebreakers(basePts);
+
+            const calcGroup = (teamIds) => {
+                return teamIds.map(id => stats[id]).sort((a, b) => b.pts - a.pts || b.w - a.w || a.id - b.id);
+            };
+
+            groupAStandings = calcGroup([1, 2, 3]);
+            groupBStandings = calcGroup([4, 5, 6]);
+
+            checkPlayoffEligibility();
+        }
+
+        window.updateTeamPoints = function(teamId, val) {
+            const num = parseFloat(val);
+            if (!isNaN(num)) {
+                manualPoints[teamId] = num;
+            } else {
+                delete manualPoints[teamId];
+            }
+            calculateStandings();
+            renderAll();
+        };
+
+        window.updateTeamBonus = function(teamId, val) {
+            const num = parseFloat(val);
+            if (!isNaN(num)) {
+                manualBonus[teamId] = num;
+            } else {
+                delete manualBonus[teamId];
+            }
+            calculateStandings();
+            renderAll();
+        };
+
+        function checkTiebreakers(basePts) {
+            const allGroupFinished = groupMatches.every(m => m.isFinished);
+            if (!allGroupFinished) {
+                tiebreakerMatches = [];
+                return;
+            }
+
+            const checkGroupTies = (groupTeamIds, groupName) => {
+                const groupTeams = groupTeamIds.map(id => ({ id, pts: basePts[id] })).sort((a, b) => b.pts - a.pts);
+                const newTbs = [];
+                for (let i = 0; i < groupTeams.length - 1; i++) {
+                    if (groupTeams[i].pts === groupTeams[i + 1].pts) {
+                        const t1Id = groupTeams[i].id;
+                        const t2Id = groupTeams[i + 1].id;
+                        const existing = tiebreakerMatches.find(tb => 
+                            tb.group === groupName &&
+                            ((tb.team1Id === t1Id && tb.team2Id === t2Id) ||
+                             (tb.team1Id === t2Id && tb.team2Id === t1Id))
+                        );
+
+                        if (existing) {
+                            newTbs.push(existing);
+                        } else {
+                            newTbs.push({
+                                id: `tb-${groupName}-${t1Id}-${t2Id}`,
+                                name: `Tiebreaker Group ${groupName}`,
+                                group: groupName,
+                                team1Id: t1Id,
+                                team2Id: t2Id,
+                                sets: [],
+                                maxSets: 1,
+                                isFinished: false,
+                                winnerId: null
+                            });
+                        }
+                    }
+                }
+                return newTbs;
+            };
+
+            tiebreakerMatches = [
+                ...checkGroupTies([1, 2, 3], 'A'),
+                ...checkGroupTies([4, 5, 6], 'B')
+            ];
+        }
+
+        function checkPlayoffEligibility() {
+            const allGroupFinished = groupMatches.every(m => m.isFinished);
+            const allTiebreakersFinished = tiebreakerMatches.length === 0 || tiebreakerMatches.every(m => m.isFinished);
+            const isUnlocked = allGroupFinished && allTiebreakersFinished;
+
+            const badge = document.getElementById('playoffs-unlocked-badge');
+            const btnFinal = document.getElementById('btn-load-final');
+            const btn3rd = document.getElementById('btn-load-3rd');
+            const btn5th = document.getElementById('btn-load-5th');
+
+            // Seed playoff matches from standings only if not manually overridden
+            if (groupAStandings[0] && groupBStandings[0] && !playoffMatches.final.isManual) {
+                playoffMatches.final.team1Id = groupAStandings[0].id;
+                playoffMatches.final.team2Id = groupBStandings[0].id;
+            }
+            if (groupAStandings[1] && groupBStandings[1] && !playoffMatches.place3.isManual) {
+                playoffMatches.place3.team1Id = groupAStandings[1].id;
+                playoffMatches.place3.team2Id = groupBStandings[1].id;
+            }
+            if (groupAStandings[2] && groupBStandings[2] && !playoffMatches.place5.isManual) {
+                playoffMatches.place5.team1Id = groupAStandings[2].id;
+                playoffMatches.place5.team2Id = groupBStandings[2].id;
+            }
+
+            if (isUnlocked || playoffMatches.final.isManual || playoffMatches.place3.isManual || playoffMatches.place5.isManual) {
+                if (badge) {
+                    badge.innerText = isUnlocked ? "Playoffs Unlocked" : "Playoffs Active (Manual / Custom Seeding)";
+                    badge.className = "self-start md:self-auto text-xs font-black px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                }
+                if (btnFinal) btnFinal.disabled = false;
+                if (btn3rd) btn3rd.disabled = false;
+                if (btn5th) btn5th.disabled = false;
+            } else {
+                if (badge) {
+                    badge.innerText = "Pending Group Stage / Tiebreakers Completion";
+                    badge.className = "self-start md:self-auto text-xs font-extrabold px-4 py-2 rounded-full bg-slate-800 text-slate-400 border border-slate-700";
+                }
+                if (btnFinal) btnFinal.disabled = true;
+                if (btn3rd) btn3rd.disabled = true;
+                if (btn5th) btn5th.disabled = true;
+            }
+        }
+
+        window.updatePlayoffTeam = function(matchId, teamSlot, teamId) {
+            const m = playoffMatches[matchId];
+            if (!m) return;
+            const parsedId = parseInt(teamId);
+            if (teamSlot === 1) m.team1Id = parsedId;
+            if (teamSlot === 2) m.team2Id = parsedId;
+            m.isManual = true;
+
+            if (currentActiveMatch && currentActiveMatch.id === matchId) {
+                currentActiveMatch.team1Id = m.team1Id;
+                currentActiveMatch.team2Id = m.team2Id;
+            }
+            calculateStandings();
+            renderAll();
+        };
+
+        function setRoundWinner(roundIndex, result) {
+            const match = currentActiveMatch;
+            if (!match) return;
+
+            while (match.sets.length <= roundIndex) {
+                match.sets.push({ setNumber: match.sets.length + 1, result: null });
+            }
+
+            match.sets[roundIndex].result = result;
+
+            // Calculate match outcomes
+            let t1Wins = 0, t2Wins = 0;
+            match.sets.forEach(s => {
+                if (s.result === 'team1') t1Wins++;
+                if (s.result === 'team2') t2Wins++;
+            });
+
+            const isPlayoff = typeof match.id === 'string';
+
+            if (isPlayoff) {
+                if (t1Wins > t2Wins && t1Wins >= 2) {
+                    match.isFinished = true;
+                    match.winnerId = match.team1Id;
+                } else if (t2Wins > t1Wins && t2Wins >= 2) {
+                    match.isFinished = true;
+                    match.winnerId = match.team2Id;
+                } else if (match.sets.length >= match.maxSets && match.sets.every(s => s.result !== null)) {
+                    match.isFinished = true;
+                    match.winnerId = t1Wins > t2Wins ? match.team1Id : (t2Wins > t1Wins ? match.team2Id : null);
+                } else {
+                    match.isFinished = false;
+                    match.winnerId = null;
+                }
+            } else {
+                // Group match best of 3 logic
+                if (t1Wins >= 2) {
+                    match.isFinished = true;
+                    match.winnerId = match.team1Id;
+                } else if (t2Wins >= 2) {
+                    match.isFinished = true;
+                    match.winnerId = match.team2Id;
+                } else if (match.sets.length >= 3 && match.sets.every(s => s.result !== null)) {
+                    match.isFinished = true;
+                    if (t1Wins > t2Wins) match.winnerId = match.team1Id;
+                    else if (t2Wins > t1Wins) match.winnerId = match.team2Id;
+                    else match.winnerId = null; // Draw
+                } else {
+                    match.isFinished = false;
+                    match.winnerId = null;
+                }
+            }
+
+            calculateStandings();
+            renderAll();
+        }
+
+        function renderScheduleItem(m) {
+            const t1 = getTeam(m.team1Id);
+            const t2 = getTeam(m.team2Id);
+            const isActive = currentActiveMatch.id === m.id;
+
+            let statusBadge = `<span class="text-xs md:text-sm text-slate-400 font-bold whitespace-nowrap">Pending</span>`;
+            if (m.isFinished) {
+                if (m.winnerId) {
+                    statusBadge = `<span class="text-xs md:text-sm text-emerald-400 font-black whitespace-nowrap">${getTeam(m.winnerId).name} Won</span>`;
+                } else {
+                    statusBadge = `<span class="text-xs md:text-sm text-amber-400 font-bold whitespace-nowrap">Draw</span>`;
+                }
+            } else if (m.sets.length > 0) {
+                statusBadge = `<span class="text-xs md:text-sm text-indigo-400 font-black whitespace-nowrap">Playing...</span>`;
+            }
+
+            const matchLabel = typeof m.id === 'number' ? `#${m.id}` : m.name.split(' ')[0];
+
+            return `
+                <div onclick="selectMatch('${m.id}')" class="p-3.5 md:p-4 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${isActive ? 'bg-brand-950/80 border-brand-500 shadow-md ring-2 ring-brand-500/40' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'}">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span class="text-xs md:text-sm font-black text-slate-400 shrink-0">${matchLabel}</span>
+                        <div class="text-sm md:text-base font-extrabold text-slate-100 truncate">
+                            <span class="${m.winnerId === m.team1Id ? 'text-emerald-400 font-black' : ''}">${t1.name}</span>
+                            <span class="text-slate-500 mx-1 font-normal">vs</span>
+                            <span class="${m.winnerId === m.team2Id ? 'text-emerald-400 font-black' : ''}">${t2.name}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 whitespace-nowrap">
+                        ${statusBadge}
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSchedule() {
+            const grpA = document.getElementById('schedule-group-a');
+            const grpB = document.getElementById('schedule-group-b');
+            const tbsContainer = document.getElementById('schedule-tiebreakers-container');
+            const tbs = document.getElementById('schedule-tiebreakers');
+            const playoffs = document.getElementById('schedule-playoffs');
+
+            if (grpA) grpA.innerHTML = groupMatches.filter(m => m.group === 'A').map(renderScheduleItem).join('');
+            if (grpB) grpB.innerHTML = groupMatches.filter(m => m.group === 'B').map(renderScheduleItem).join('');
+
+            if (tiebreakerMatches.length > 0) {
+                if (tbsContainer) tbsContainer.classList.remove('hidden');
+                if (tbs) tbs.innerHTML = tiebreakerMatches.map(renderScheduleItem).join('');
+            } else {
+                if (tbsContainer) tbsContainer.classList.add('hidden');
+                if (tbs) tbs.innerHTML = '';
+            }
+
+            if (playoffs) {
+                playoffs.innerHTML = [
+                    renderScheduleItem(playoffMatches.final),
+                    renderScheduleItem(playoffMatches.place3),
+                    renderScheduleItem(playoffMatches.place5)
+                ].join('');
+            }
+        }
+
+        function renderLiveArena() {
+            const match = currentActiveMatch;
+            if (!match) return;
+            const t1 = getTeam(match.team1Id);
+            const t2 = getTeam(match.team2Id);
+
+            const elMatchId = document.getElementById('arena-match-id');
+            if (elMatchId) elMatchId.innerText = typeof match.id === 'number' ? `Match #${match.id}` : match.name;
+            
+            const isFinalPlayoff = ['final', 'place3', 'place5'].includes(match.id);
+            const isTiebreaker = typeof match.id === 'string' && match.id.startsWith('tb-');
+            const isPlayoff = isFinalPlayoff || isTiebreaker;
+
+            const elPhase = document.getElementById('arena-match-phase');
+            if (elPhase) {
+                if (isFinalPlayoff) elPhase.innerText = "PLAYOFF MATCH";
+                else if (isTiebreaker) elPhase.innerText = "SUDDEN DEATH MATCH";
+                else elPhase.innerText = `GROUP ${match.group} MATCH`;
+            }
+            
+            const elRules = document.getElementById('arena-rules-badge');
+            if (elRules) elRules.style.display = (isFinalPlayoff || isTiebreaker) ? 'none' : 'flex';
+
+            const elT1Name = document.getElementById('team1-name');
+            if (elT1Name) elT1Name.innerText = t1.name;
+            
+            const elT1Group = document.getElementById('team1-group-label');
+            if (elT1Group) elT1Group.innerText = isPlayoff ? 'Playoffs' : `Group ${t1.group}`;
+            
+            const elT2Name = document.getElementById('team2-name');
+            if (elT2Name) elT2Name.innerText = t2.name;
+            
+            const elT2Group = document.getElementById('team2-group-label');
+            if (elT2Group) elT2Group.innerText = isPlayoff ? 'Playoffs' : `Group ${t2.group}`;
+
+            // Winner tags
+            const t1WinnerTag = document.getElementById('team1-winner-tag');
+            const t2WinnerTag = document.getElementById('team2-winner-tag');
+            if (t1WinnerTag) t1WinnerTag.classList.add('hidden');
+            if (t2WinnerTag) t2WinnerTag.classList.add('hidden');
+
+            if (match.isFinished) {
+                if (match.winnerId === match.team1Id && t1WinnerTag) t1WinnerTag.classList.remove('hidden');
+                else if (match.winnerId === match.team2Id && t2WinnerTag) t2WinnerTag.classList.remove('hidden');
+            }
+
+            // Render Round Cards Container
+            const roundsContainer = document.getElementById('rounds-container');
+            if (!roundsContainer) return;
+            roundsContainer.innerHTML = '';
+
+            const maxRounds = match.maxSets || 3;
+
+            for (let i = 1; i <= maxRounds; i++) {
+                // If 2-0 early finish in first 2 rounds, Round 3 is skipped!
+                const isSkipped = (i === 3 && maxRounds === 3 && !isPlayoff && (
+                    (match.sets[0]?.result === 'team1' && match.sets[1]?.result === 'team1') ||
+                    (match.sets[0]?.result === 'team2' && match.sets[1]?.result === 'team2')
+                ));
+
+                const currentRoundData = match.sets[i - 1] || { setNumber: i, result: null };
+
+                const roundCard = document.createElement('div');
+                roundCard.className = `bg-slate-950/90 border ${isSkipped ? 'border-slate-800 opacity-50' : 'border-slate-800'} rounded-2xl p-4 md:p-5 space-y-4 transition shadow-md`;
+
+                roundCard.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                        <span class="text-sm font-black uppercase tracking-wider text-slate-200">Match/Round ${i} ${i === 4 ? '(Tiebreaker)' : ''}</span>
+                        ${isSkipped ? '<span class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-amber-400 font-extrabold">SKIPPED (2-0 Sweep)</span>' : ''}
+                    </div>
+
+                    ${isSkipped ? `
+                        <p class="text-sm text-slate-400 font-medium italic text-center py-4">Round not required as match winner decided.</p>
+                    ` : `
+                        <div class="grid grid-cols-3 gap-2.5">
+                            <button onclick="setRoundWinner(${i - 1}, 'team1')" class="px-2 py-3.5 rounded-xl text-sm font-extrabold transition flex flex-col items-center justify-center gap-2 ${currentRoundData.result === 'team1' ? 'bg-brand-600 text-white ring-2 ring-brand-300 shadow-lg' : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800'}">
+                                <i class="fa-solid fa-trophy text-sm"></i>
+                                <span class="text-xs md:text-sm font-extrabold text-center leading-tight w-full break-words px-1">${t1.name}</span>
+                            </button>
+                            <button onclick="setRoundWinner(${i - 1}, 'draw')" class="px-2 py-3.5 rounded-xl text-sm font-extrabold transition flex flex-col items-center justify-center gap-2 ${currentRoundData.result === 'draw' ? 'bg-slate-700 text-amber-300 ring-2 ring-amber-400 shadow-lg' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'}">
+                                <i class="fa-solid fa-handshake text-sm"></i>
+                                <span class="text-xs md:text-sm font-extrabold text-center leading-tight">Draw</span>
+                            </button>
+                            <button onclick="setRoundWinner(${i - 1}, 'team2')" class="px-2 py-3.5 rounded-xl text-sm font-extrabold transition flex flex-col items-center justify-center gap-2 ${currentRoundData.result === 'team2' ? 'bg-violet-600 text-white ring-2 ring-violet-300 shadow-lg' : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800'}">
+                                <i class="fa-solid fa-trophy text-sm"></i>
+                                <span class="text-xs md:text-sm font-extrabold text-center leading-tight w-full break-words px-1">${t2.name}</span>
+                            </button>
+                        </div>
+                    `}
+                `;
+                roundsContainer.appendChild(roundCard);
+            }
+
+            // Optional 4th Match/Round Button Visibility Logic for Final Playoff Matches only when drawn
+            const optionalContainer = document.getElementById('optional-round-container');
+            const btn4th = document.getElementById('btn-add-4th-round');
+
+            let t1Wins = 0, t2Wins = 0;
+            const filledSets = match.sets.filter(s => s && s.result !== null);
+            filledSets.forEach(s => {
+                if (s.result === 'team1') t1Wins++;
+                if (s.result === 'team2') t2Wins++;
+            });
+
+            // Draw check: at least 3 rounds played with tied wins OR match finished as a draw
+            const isDrawn = (filledSets.length >= 3 && t1Wins === t2Wins) || (match.isFinished && match.winnerId === null);
+            const showOptional4th = isFinalPlayoff && (isDrawn || match.maxSets === 4);
+
+            if (showOptional4th) {
+                if (optionalContainer) optionalContainer.classList.remove('hidden');
+                if (btn4th) {
+                    if (match.maxSets === 4) {
+                        btn4th.innerHTML = `<i class="fa-solid fa-check text-2xl"></i> <span>4th Optional Match Added</span>`;
+                        btn4th.disabled = true;
+                        btn4th.className = "px-8 py-4 rounded-2xl bg-emerald-700/60 text-white font-black text-base uppercase tracking-wider opacity-80 cursor-not-allowed flex items-center gap-3";
+                    } else {
+                        btn4th.innerHTML = `<i class="fa-solid fa-circle-plus text-2xl"></i> <span>+ Add 4th Optional Match (Tiebreaker)</span>`;
+                        btn4th.disabled = false;
+                        btn4th.className = "px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-base uppercase tracking-wider shadow-xl shadow-amber-500/20 transition transform hover:scale-[1.02] active:scale-95 flex items-center gap-3";
+                        btn4th.onclick = function() {
+                            match.maxSets = 4;
+                            renderLiveArena();
+                        };
+                    }
+                }
+            } else {
+                if (optionalContainer) optionalContainer.classList.add('hidden');
+            }
+
+            // Match Status Banner Update
+            const banner = document.getElementById('match-status-banner');
+            if (banner) {
+                if (match.isFinished) {
+                    if (match.winnerId) {
+                        const winner = getTeam(match.winnerId);
+                        const isSweep = !isPlayoff && ((match.sets[0]?.result === 'team1' && match.sets[1]?.result === 'team1') || (match.sets[0]?.result === 'team2' && match.sets[1]?.result === 'team2'));
+                        banner.innerText = `${winner.name} Wins Match! ${isSweep ? '(+3 Bonus Points)' : ''}`;
+                        banner.className = 'text-sm font-black text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/30';
+                    } else {
+                        banner.innerText = isPlayoff ? 'Tied Playoff Match — Add 4th Match Above' : 'Match Ended in Draw';
+                        banner.className = 'text-sm font-black text-amber-400 bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/30';
+                    }
+                } else {
+                    banner.innerText = 'Match In Progress';
+                    banner.className = 'text-sm font-black text-indigo-300 bg-indigo-500/10 px-4 py-2 rounded-xl border border-indigo-500/20';
+                }
+            }
+        }
+
+        function renderGroupStandings() {
+            // Group A
+            const elGrpA = document.getElementById('group-a-table');
+            if (elGrpA) {
+                elGrpA.innerHTML = groupAStandings.map((row, idx) => `
+                    <tr onclick="showTeamHistory(${row.id})" class="hover:bg-slate-800/80 transition cursor-pointer" title="Click to view match history">
+                        <td class="py-4 pl-2 font-black text-slate-300 text-base md:text-lg">${idx + 1}</td>
+                        <td class="py-4 font-black text-white text-base md:text-xl flex items-center gap-2.5">
+                            <span>${row.name}</span>
+                            <i class="fa-solid fa-circle-info text-sm text-slate-400 hover:text-brand-400"></i>
+                        </td>
+                        <td class="py-4 text-center text-slate-200 font-bold text-base md:text-lg">${row.mp}</td>
+                        <td class="py-4 text-center text-emerald-400 font-extrabold text-base md:text-lg">${row.w}</td>
+                        <td class="py-4 text-center text-amber-400 font-extrabold text-base md:text-lg">${row.d}</td>
+                        <td class="py-4 text-center text-red-400 font-extrabold text-base md:text-lg">${row.l}</td>
+                        <td class="py-4 text-center text-indigo-400 font-extrabold text-base md:text-lg">
+                            <input type="number" value="${row.bonusPts}" step="0.5" onchange="updateTeamBonus(${row.id}, this.value)" onclick="event.stopPropagation()" class="w-14 bg-slate-950 border border-slate-700 text-indigo-400 font-extrabold text-center rounded px-1 py-0.5 focus:outline-none focus:border-indigo-500">
+                        </td>
+                        <td class="py-4 text-right pr-2 font-black text-brand-400 text-xl md:text-2xl">
+                            <input type="number" value="${row.pts}" step="0.5" onchange="updateTeamPoints(${row.id}, this.value)" onclick="event.stopPropagation()" class="w-16 bg-slate-950 border border-slate-700 text-brand-400 font-black text-right rounded px-1 py-0.5 focus:outline-none focus:border-brand-500">
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Group B
+            const elGrpB = document.getElementById('group-b-table');
+            if (elGrpB) {
+                elGrpB.innerHTML = groupBStandings.map((row, idx) => `
+                    <tr onclick="showTeamHistory(${row.id})" class="hover:bg-slate-800/80 transition cursor-pointer" title="Click to view match history">
+                        <td class="py-4 pl-2 font-black text-slate-300 text-base md:text-lg">${idx + 1}</td>
+                        <td class="py-4 font-black text-white text-base md:text-xl flex items-center gap-2.5">
+                            <span>${row.name}</span>
+                            <i class="fa-solid fa-circle-info text-sm text-slate-400 hover:text-violet-400"></i>
+                        </td>
+                        <td class="py-4 text-center text-slate-200 font-bold text-base md:text-lg">${row.mp}</td>
+                        <td class="py-4 text-center text-emerald-400 font-extrabold text-base md:text-lg">${row.w}</td>
+                        <td class="py-4 text-center text-amber-400 font-extrabold text-base md:text-lg">${row.d}</td>
+                        <td class="py-4 text-center text-red-400 font-extrabold text-base md:text-lg">${row.l}</td>
+                        <td class="py-4 text-center text-violet-400 font-extrabold text-base md:text-lg">
+                            <input type="number" value="${row.bonusPts}" step="0.5" onchange="updateTeamBonus(${row.id}, this.value)" onclick="event.stopPropagation()" class="w-14 bg-slate-950 border border-slate-700 text-violet-400 font-extrabold text-center rounded px-1 py-0.5 focus:outline-none focus:border-violet-500">
+                        </td>
+                        <td class="py-4 text-right pr-2 font-black text-violet-400 text-xl md:text-2xl">
+                            <input type="number" value="${row.pts}" step="0.5" onchange="updateTeamPoints(${row.id}, this.value)" onclick="event.stopPropagation()" class="w-16 bg-slate-950 border border-slate-700 text-violet-400 font-black text-right rounded px-1 py-0.5 focus:outline-none focus:border-violet-500">
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Render Sudden Death Standings Cards Section
+            const tiebreakerSection = document.getElementById('standings-tiebreaker-section');
+            const tiebreakerCards = document.getElementById('standings-tiebreaker-cards');
+
+            if (tiebreakerMatches.length > 0) {
+                if (tiebreakerSection) tiebreakerSection.classList.remove('hidden');
+                if (tiebreakerCards) {
+                    tiebreakerCards.innerHTML = tiebreakerMatches.map(tb => {
+                        const t1 = getTeam(tb.team1Id);
+                        const t2 = getTeam(tb.team2Id);
+                        return `
+                            <div class="bg-slate-900 border border-red-500/40 rounded-3xl p-6 space-y-4 shadow-xl">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                    <span class="text-sm font-black uppercase text-red-400 tracking-wider flex items-center gap-2">
+                                        <i class="fa-solid fa-fire text-red-500 text-base"></i> Group ${tb.group} Sudden Death
+                                    </span>
+                                    <span class="text-xs text-amber-300 font-black uppercase bg-amber-950/80 px-2.5 py-1 rounded border border-amber-800/80">
+                                        ${tb.isFinished ? 'Completed' : 'Pending Match'}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between text-lg md:text-xl font-black">
+                                    <span class="${tb.winnerId === tb.team1Id ? 'text-emerald-400' : 'text-slate-100'}">${t1.name}</span>
+                                    <span class="text-xs text-slate-500 font-normal">vs</span>
+                                    <span class="${tb.winnerId === tb.team2Id ? 'text-emerald-400' : 'text-slate-100'}">${t2.name}</span>
+                                </div>
+                                <button onclick="loadAndSwitchMatch('${tb.id}')" class="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm uppercase tracking-wider transition shadow-md shadow-red-600/20">
+                                    ${tb.isFinished ? 'View Tiebreaker Match' : 'Play Sudden Death Match'}
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } else {
+                if (tiebreakerSection) tiebreakerSection.classList.add('hidden');
+                if (tiebreakerCards) tiebreakerCards.innerHTML = '';
+            }
+        }
+
+        function renderPlayoffCard(elemId, match) {
+            const elem = document.getElementById(elemId);
+            if (!elem) return;
+
+            const optionsT1 = Object.values(teams).map(t => 
+                `<option value="${t.id}" ${t.id === match.team1Id ? 'selected' : ''}>${t.name} (Grp ${t.group})</option>`
+            ).join('');
+
+            const optionsT2 = Object.values(teams).map(t => 
+                `<option value="${t.id}" ${t.id === match.team2Id ? 'selected' : ''}>${t.name} (Grp ${t.group})</option>`
+            ).join('');
+
+            elem.innerHTML = `
+                <div class="flex items-center justify-between gap-2">
+                    <select onchange="updatePlayoffTeam('${match.id}', 1, this.value)" class="bg-slate-900 border border-slate-700 text-slate-100 text-xs md:text-sm font-extrabold rounded-xl px-2 py-1.5 focus:border-brand-500 focus:outline-none w-[45%] truncate">
+                        ${optionsT1}
+                    </select>
+                    <span class="text-xs text-slate-500 font-bold shrink-0">vs</span>
+                    <select onchange="updatePlayoffTeam('${match.id}', 2, this.value)" class="bg-slate-900 border border-slate-700 text-slate-100 text-xs md:text-sm font-extrabold rounded-xl px-2 py-1.5 focus:border-brand-500 focus:outline-none w-[45%] truncate">
+                        ${optionsT2}
+                    </select>
+                </div>
+                ${match.isFinished ? `
+                    <div class="text-center pt-2 border-t border-slate-800">
+                        <span class="text-xs font-black text-emerald-400">
+                            Winner: ${getTeam(match.winnerId).name || 'Draw'}
+                        </span>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        function renderPlayoffBracket() {
+            renderPlayoffCard('playoff-card-final', playoffMatches.final);
+            renderPlayoffCard('playoff-card-3rd', playoffMatches.place3);
+            renderPlayoffCard('playoff-card-5th', playoffMatches.place5);
+        }
+
+        function renderAll() {
+            renderSchedule();
+            renderLiveArena();
+            renderGroupStandings();
+            renderPlayoffBracket();
+        }
+
+        window.showTeamHistory = function(teamId) {
+            const team = getTeam(teamId);
+            const modal = document.getElementById('modal-team-history');
+            if (!team || !modal) return;
+
+            document.getElementById('history-team-name').innerText = team.name;
+            document.getElementById('history-team-group').innerText = `Group ${team.group} Match History`;
+
+            const teamGroupMatches = groupMatches.filter(m => m.team1Id === teamId || m.team2Id === teamId);
+            const teamTbMatches = tiebreakerMatches.filter(m => m.team1Id === teamId || m.team2Id === teamId);
+            const allMatches = [...teamGroupMatches, ...teamTbMatches];
+
+            let played = 0, wins = 0, draws = 0, losses = 0, bonus = 0, points = 0;
+
+            const matchesListEl = document.getElementById('history-matches-list');
+            matchesListEl.innerHTML = '';
+
+            allMatches.forEach(m => {
+                const isTeam1 = m.team1Id === teamId;
+                const opponentId = isTeam1 ? m.team2Id : m.team1Id;
+                const opponent = getTeam(opponentId);
+
+                let statusText = 'Not Played';
+                let statusClass = 'text-slate-500';
+
+                if (m.isFinished) {
+                    played++;
+                    if (m.winnerId === teamId) {
+                        wins++;
+                        points += 3;
+                        statusText = 'Win (+3 pts)';
+                        statusClass = 'text-emerald-400 font-bold';
+
+                        if (m.sets[0]?.result === (isTeam1 ? 'team1' : 'team2') && m.sets[1]?.result === (isTeam1 ? 'team1' : 'team2')) {
+                            bonus += 3;
+                            points += 3;
+                            statusText = 'Win (+3 pts & +3 Bonus)';
+                        }
+                    } else if (m.winnerId === null) {
+                        draws++;
+                        points += 1;
+                        statusText = 'Draw (+1 pt)';
+                        statusClass = 'text-amber-400 font-bold';
+                    } else {
+                        losses++;
+                        statusText = 'Loss (0 pts)';
+                        statusClass = 'text-red-400 font-bold';
+                    }
+                }
+
+                let roundsWon = 0, roundsLost = 0;
+                m.sets.forEach(s => {
+                    if (s.result === (isTeam1 ? 'team1' : 'team2')) roundsWon++;
+                    else if (s.result === (isTeam1 ? 'team2' : 'team1')) roundsLost++;
+                });
+
+                const row = document.createElement('div');
+                row.className = 'bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs';
+                row.innerHTML = `
+                    <div class="space-y-0.5">
+                        <span class="font-extrabold text-white text-sm">vs ${opponent.name}</span>
+                        <span class="block text-[11px] text-slate-400">Rounds: ${roundsWon} - ${roundsLost}</span>
+                    </div>
+                    <div class="text-right ${statusClass}">
+                        ${statusText}
+                    </div>
+                `;
+                matchesListEl.appendChild(row);
+            });
+
+            document.getElementById('history-stat-mp').innerText = played;
+            document.getElementById('history-stat-wdl').innerText = `${wins}-${draws}-${losses}`;
+            document.getElementById('history-stat-bonus').innerText = `+${bonus}`;
+            document.getElementById('history-stat-pts').innerText = points;
+
+            modal.classList.remove('hidden');
+        };
+
+        function exportResults() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+
+            const hours = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            const secs = String(now.getSeconds()).padStart(2, '0');
+            const timeDisplay = `${hours}:${mins}:${secs}`;
+            const timeFileStr = `${hours}-${mins}-${secs}`;
+
+            // Helper to get overall rankings
+            const getRankedTeams = () => {
+                const ranks = {
+                    '1st': 'TBD',
+                    '2nd': 'TBD',
+                    '3rd': 'TBD',
+                    '4th': 'TBD',
+                    '5th': 'TBD',
+                    '6th': 'TBD'
+                };
+
+                const teamRanksMap = {};
+
+                // 1st & 2nd
+                if (playoffMatches.final.isFinished && playoffMatches.final.winnerId) {
+                    const wId = playoffMatches.final.winnerId;
+                    const lId = playoffMatches.final.team1Id === wId ? playoffMatches.final.team2Id : playoffMatches.final.team1Id;
+                    ranks['1st'] = getTeam(wId).name;
+                    ranks['2nd'] = getTeam(lId).name;
+                    teamRanksMap[wId] = '1st';
+                    teamRanksMap[lId] = '2nd';
+                } else {
+                    if (groupAStandings[0]) { ranks['1st'] = groupAStandings[0].name; teamRanksMap[groupAStandings[0].id] = '1st (Group Lead)'; }
+                    if (groupBStandings[0]) { ranks['2nd'] = groupBStandings[0].name; teamRanksMap[groupBStandings[0].id] = '2nd (Group Lead)'; }
+                }
+
+                // 3rd & 4th
+                if (playoffMatches.place3.isFinished && playoffMatches.place3.winnerId) {
+                    const wId = playoffMatches.place3.winnerId;
+                    const lId = playoffMatches.place3.team1Id === wId ? playoffMatches.place3.team2Id : playoffMatches.place3.team1Id;
+                    ranks['3rd'] = getTeam(wId).name;
+                    ranks['4th'] = getTeam(lId).name;
+                    teamRanksMap[wId] = '3rd';
+                    teamRanksMap[lId] = '4th';
+                } else {
+                    if (groupAStandings[1]) { ranks['3rd'] = groupAStandings[1].name; teamRanksMap[groupAStandings[1].id] = '3rd (Group 2nd)'; }
+                    if (groupBStandings[1]) { ranks['4th'] = groupBStandings[1].name; teamRanksMap[groupBStandings[1].id] = '4th (Group 2nd)'; }
+                }
+
+                // 5th & 6th
+                if (playoffMatches.place5.isFinished && playoffMatches.place5.winnerId) {
+                    const wId = playoffMatches.place5.winnerId;
+                    const lId = playoffMatches.place5.team1Id === wId ? playoffMatches.place5.team2Id : playoffMatches.place5.team1Id;
+                    ranks['5th'] = getTeam(wId).name;
+                    ranks['6th'] = getTeam(lId).name;
+                    teamRanksMap[wId] = '5th';
+                    teamRanksMap[lId] = '6th';
+                } else {
+                    if (groupAStandings[2]) { ranks['5th'] = groupAStandings[2].name; teamRanksMap[groupAStandings[2].id] = '5th (Group 3rd)'; }
+                    if (groupBStandings[2]) { ranks['6th'] = groupBStandings[2].name; teamRanksMap[groupBStandings[2].id] = '6th (Group 3rd)'; }
+                }
+
+                return { ranks, teamRanksMap };
+            };
+
+            const { ranks, teamRanksMap } = getRankedTeams();
+
+            let fileContent = `${dateStr}\n${timeDisplay}\n\n`;
+
+            fileContent += `1st: ${ranks['1st']}\n`;
+            fileContent += `2nd: ${ranks['2nd']}\n`;
+            fileContent += `3rd: ${ranks['3rd']}\n`;
+            fileContent += `4th: ${ranks['4th']}\n`;
+            fileContent += `5th: ${ranks['5th']}\n`;
+            fileContent += `6th: ${ranks['6th']}\n\n`;
+
+            // Build match history per team (1 through 6)
+            [1, 2, 3, 4, 5, 6].forEach(teamId => {
+                const team = getTeam(teamId);
+                fileContent += `Match history of ${team.name}:\n`;
+
+                const teamGroupMatches = groupMatches.filter(m => m.team1Id === teamId || m.team2Id === teamId);
+                const teamTbMatches = tiebreakerMatches.filter(m => m.team1Id === teamId || m.team2Id === teamId);
+                const teamPlayoffMatches = Object.values(playoffMatches).filter(m => m.team1Id === teamId || m.team2Id === teamId);
+
+                const allTeamMatches = [...teamGroupMatches, ...teamTbMatches, ...teamPlayoffMatches];
+
+                let wins = 0, draws = 0, losses = 0;
+
+                allTeamMatches.forEach(m => {
+                    const isTeam1 = m.team1Id === teamId;
+                    const opponentId = isTeam1 ? m.team2Id : m.team1Id;
+                    const opponent = getTeam(opponentId);
+
+                    let roundsWon = 0, roundsLost = 0;
+                    m.sets.forEach(s => {
+                        if (s.result === (isTeam1 ? 'team1' : 'team2')) roundsWon++;
+                        else if (s.result === (isTeam1 ? 'team2' : 'team1')) roundsLost++;
+                    });
+
+                    fileContent += `vs ${opponent.name}\n`;
+                    fileContent += `Rounds: ${roundsWon} - ${roundsLost}\n\n`;
+
+                    if (m.isFinished) {
+                        if (m.winnerId === teamId) wins++;
+                        else if (m.winnerId === null) draws++;
+                        else losses++;
+                    }
+                });
+
+                fileContent += `Statistics\n`;
+                fileContent += `W-D-L: ${wins}-${draws}-${losses}\n`;
+                fileContent += `Final rank: ${teamRanksMap[teamId] || 'N/A'}\n\n`;
+            });
+
+            // Trigger download
+            const fileName = `SPIKEScores[${dateStr}][${timeFileStr}].txt`;
+            const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = fileName;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(url);
+        }
+
+        function bindEvents() {
+            const addListener = (id, event, fn) => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener(event, fn);
+            };
+
+            // Timer buttons
+            addListener('btn-timer-start', 'click', startTimer);
+            addListener('btn-timer-pause', 'click', pauseTimer);
+            addListener('btn-timer-reset', 'click', resetTimer);
+
+            // Export Results button
+            addListener('btn-export-results', 'click', exportResults);
+
+            // History Modal Close
+            const modalHistory = document.getElementById('modal-team-history');
+            addListener('btn-close-history-modal', 'click', () => {
+                if (modalHistory) modalHistory.classList.add('hidden');
+            });
+            addListener('btn-dismiss-history', 'click', () => {
+                if (modalHistory) modalHistory.classList.add('hidden');
+            });
+
+            // Edit Teams Modal
+            const modalTeams = document.getElementById('modal-teams');
+            addListener('btn-edit-teams', 'click', () => {
+                [1, 2, 3, 4, 5, 6].forEach(i => {
+                    const input = document.getElementById(`input-team-${i}`);
+                    if (input && teams[i]) input.value = teams[i].name;
+                });
+                if (modalTeams) modalTeams.classList.remove('hidden');
+            });
+
+            addListener('btn-close-modal', 'click', () => {
+                if (modalTeams) modalTeams.classList.add('hidden');
+            });
+
+            addListener('btn-save-teams', 'click', () => {
+                [1, 2, 3, 4, 5, 6].forEach(i => {
+                    const input = document.getElementById(`input-team-${i}`);
+                    if (input) {
+                        const val = input.value.trim();
+                        if (val) teams[i].name = val;
+                    }
+                });
+                if (modalTeams) modalTeams.classList.add('hidden');
+                renderAll();
+            });
+
+            // Reset Confirmation Modal
+            const modalReset = document.getElementById('modal-reset');
+            addListener('btn-open-reset-modal', 'click', () => {
+                if (modalReset) modalReset.classList.remove('hidden');
+            });
+
+            addListener('btn-cancel-reset', 'click', () => {
+                if (modalReset) modalReset.classList.add('hidden');
+            });
+
+            addListener('btn-confirm-reset', 'click', () => {
+                groupMatches.forEach(m => {
+                    m.sets = [];
+                    m.isFinished = false;
+                    m.winnerId = null;
+                });
+                tiebreakerMatches = [];
+                manualPoints = {};
+                manualBonus = {};
+                Object.keys(playoffMatches).forEach(k => {
+                    playoffMatches[k].sets = [];
+                    playoffMatches[k].isFinished = false;
+                    playoffMatches[k].winnerId = null;
+                    playoffMatches[k].maxSets = 3;
+                    playoffMatches[k].isManual = false;
+                });
+                currentActiveMatch = groupMatches[0];
+                if (modalReset) modalReset.classList.add('hidden');
+                resetTimer();
+                renderAll();
+            });
+        }
+
+        function initApp() {
+            if (!currentActiveMatch) {
+                currentActiveMatch = groupMatches[0];
+            }
+            calculateStandings();
+            bindEvents();
+            renderAll();
+        }
+
+        // Run application on window load
+        window.onload = function() {
+            initApp();
+        };
+    </script>
+</body>
+</html>  
